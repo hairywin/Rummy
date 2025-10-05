@@ -68,13 +68,16 @@
   .bump{animation:bump .35s ease}
   @keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}
 
-  /* Leaderboard */
+  /* Leaderboard: shows all always. Desktop/tablet: sticky+scroll inside. Mobile: normal flow. */
   .lb{
     position:sticky; top:14px;
-    max-height: calc(100dvh - 28px);  /* desktop/tablet fit */
+    max-height: calc(100dvh - 28px);
     overflow:auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
+  }
+  @media (max-width:980px){
+    .lb{position:static; max-height:none; overflow:visible}
   }
   .lb .title{display:flex; align-items:center; justify-content:space-between; margin:0 0 10px}
   .lb h3{font-size:22px; margin:0}
@@ -87,14 +90,6 @@
   .row{transition:background-color .3s ease}
   .rise{background:#14381f} .fall{background:#3a1420}
   .blink{animation:blink .8s ease 2} @keyframes blink{50%{filter:brightness(1.4)}}
-
-  /* Mobile behavior: leaderboard is part of flow, collapsed to top 3 by default */
-  #toggleLB{display:none}                /* hidden on desktop */
-  @media (max-width:980px){
-    .lb{position:static; max-height:none; overflow:visible}
-    #toggleLB{display:inline-block}
-    .lb.collapsed tbody tr:nth-child(n+4){display:none}
-  }
 
   .winner{position:fixed; inset:0; display:none; place-items:center; background:#0a1030cc; backdrop-filter:blur(2px)}
   .winner.show{display:grid}
@@ -119,8 +114,6 @@
       <button id="addPlayerBtn">➕ Add player</button>
       <button id="undoBtn">⤺ Undo</button>
       <button id="newBtn">🆕 New game</button>
-      <button id="exportBtn" title="Copy JSON to clipboard">📤 Export</button>
-      <button id="importBtn" title="Paste JSON to load">📥 Import</button>
     </div>
   </header>
 
@@ -130,10 +123,7 @@
     <aside class="card lb" id="leaderboardCard">
       <div class="title">
         <h3>Live Leaderboard ♠️♥️♦️♣️</h3>
-        <div class="cluster">
-          <span class="pill" style="font-weight:800; font-size:12px">auto-updates</span>
-          <button id="toggleLB" class="pill" title="Show or collapse on mobile">Show all</button>
-        </div>
+        <span class="pill" style="font-weight:800; font-size:12px">auto-updates</span>
       </div>
       <table id="leaderboard" aria-label="Leaderboard">
         <thead><tr><th class="pos">#</th><th>Player</th><th class="score">Score</th></tr></thead>
@@ -167,13 +157,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const $winner = must('winner');
   const $winnerTitle = must('winnerTitle');
   const $lbBody = document.querySelector('#leaderboard tbody');
-  const $lbCard = must('leaderboardCard');
-  const $toggleLB = must('toggleLB');
   const $fx = must('fx');
   if(!$players || !$lbBody) return;
 
   const SUITS = ['♠️','♥️','♦️','♣️','🃏'];
-  const LS_KEY = 'rummy500_state_v5_mobilelb';
+  const LS_KEY = 'rummy500_state_v6_alwaysall';
   let state = { target:500, players:[], history:[], hands:0, locked:false };
   let prevRanks = new Map();
 
@@ -338,11 +326,13 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   /* Confetti */
+  const $fxCtx = document.getElementById('fx').getContext('2d');
   function confetti(ms=1000){
-    const ctx = $fx.getContext('2d');
+    const ctx = $fxCtx;
     const dpr = Math.max(1, Math.floor(window.devicePixelRatio||1));
-    const resize = ()=>{ $fx.width = innerWidth*dpr; $fx.height = innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };
-    resize(); let t0=null; const N=90;
+    const resize = ()=>{ fx.width = innerWidth*dpr; fx.height = innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };
+    const fx = document.getElementById('fx'); resize();
+    let t0=null; const N=90;
     const parts = Array.from({length:N},(_,i)=>({
       x: innerWidth/2, y: innerHeight*0.25, vx: (Math.random()*2-1)*4, vy: Math.random()*-3-1,
       g: 0.12, s: 6+Math.random()*6, r: Math.random()*Math.PI, vr:(Math.random()*2-1)*0.2,
@@ -363,34 +353,12 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(step); window.addEventListener('resize', resize, {once:true});
   }
 
-  /* Mobile leaderboard toggle */
-  function isMobile(){ return window.matchMedia('(max-width: 980px)').matches; }
-  function applyLBMode(){
-    if(isMobile()){
-      if(!$lbCard.classList.contains('collapsed')) $lbCard.classList.add('collapsed');
-      $toggleLB.textContent = $lbCard.classList.contains('collapsed') ? 'Show all' : 'Show top 3';
-      $toggleLB.style.display = 'inline-block';
-    }else{
-      $lbCard.classList.remove('collapsed');
-      $toggleLB.style.display = 'none';
-    }
-  }
-  $toggleLB.onclick = () => { $lbCard.classList.toggle('collapsed'); $toggleLB.textContent = $lbCard.classList.contains('collapsed') ? 'Show all' : 'Show top 3'; };
-  window.addEventListener('resize', applyLBMode);
-
   // Wire buttons
-  const w = id => must(id);
-  w('addPlayerBtn').onclick = addPlayerPrompt;
-  w('undoBtn').onclick = undo;
-  w('newBtn').onclick = newGame;
-  w('exportBtn').onclick = ()=>{ navigator.clipboard?.writeText(JSON.stringify(state,null,2)); alert('State copied to clipboard.'); };
-  w('importBtn').onclick = ()=>{
-    const raw = prompt('Paste previously exported JSON:',''); if(!raw) return;
-    try{ const o=JSON.parse(raw); if(!o.players) throw 0; state={...state,...o}; ensureSuits(); save(); render(); prevRanks=currentRanks(); }
-    catch{ alert('Invalid JSON.'); }
-  };
-  w('continueBtn').onclick = ()=>{ state.locked=false; $winner.classList.remove('show'); save(); render(); };
-  w('resetBtn').onclick = ()=>{ resetTotals(); $winner.classList.remove('show'); };
+  must('addPlayerBtn').onclick = addPlayerPrompt;
+  must('undoBtn').onclick = undo;
+  must('newBtn').onclick = newGame;
+  must('continueBtn').onclick = ()=>{ state.locked=false; $winner.classList.remove('show'); save(); render(); };
+  must('resetBtn').onclick = ()=>{ resetTotals(); $winner.classList.remove('show'); };
   $target.onchange = ()=>{ state.target = clampInt(parseInt($target.value||'500'),100,5000); $target.value=state.target; save(); checkWinner(); render(); };
 
   // Boot
@@ -398,7 +366,6 @@ document.addEventListener('DOMContentLoaded', () => {
   if(state.players.length===0){ addPlayer('Player 1'); addPlayer('Player 2'); } else { render(); }
   prevRanks = currentRanks();
   checkWinner();
-  applyLBMode();
 
   // Enter key adds score for focused player
   document.addEventListener('keydown', e=>{
