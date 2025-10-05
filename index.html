@@ -1,0 +1,359 @@
+Here’s the updated `index.html` with that label removed.
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Rummy 500 — Fun Scorekeeper</title>
+<style>
+  :root{
+    --bg:#0a0f2a; --ink:#eef3ff; --muted:#a8b7de; --panel:#12183b; --panel2:#0d1331;
+    --line:#273579; --accent:#5dd39e; --warn:#ffd166; --danger:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0; background:
+      radial-gradient(120% 120% at 20% -10%, #1d265a 0%, transparent 60%),
+      radial-gradient(120% 120% at 80% -10%, #1b2a66 0%, transparent 60%),
+      linear-gradient(180deg,var(--panel2),#070b1e 70%);
+    color:var(--ink); font:500 15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
+    padding:14px; display:grid; place-items:start;
+  }
+  .wrap{width:min(1300px,98vw); margin:0 auto; display:grid; gap:12px}
+
+  header.card{
+    display:flex; gap:10px; align-items:center; justify-content:space-between; padding:12px 14px;
+    background:linear-gradient(180deg,#121a3e,#0f1736); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px #0006;
+  }
+  .cluster{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
+  .pill{padding:6px 10px; border-radius:999px; background:#0d1740; border:1px solid var(--line)}
+  input, button{
+    background:#0d1740; color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-weight:600;
+  }
+  input[type="number"]{width:90px}
+  input[type="text"]{min-width:140px}
+  button{cursor:pointer}
+  button:hover{filter:brightness(1.07)}
+  button:active{transform:translateY(1px)}
+
+  /* Layout: left controls narrower, right leaderboard much wider */
+  .grid{
+    display:grid; gap:12px;
+    grid-template-columns: 0.65fr 1.35fr;
+    align-items:start;
+  }
+  @media (max-width: 980px){
+    .grid{grid-template-columns:1fr}
+    .lb{order:-1}
+  }
+
+  /* Player cards */
+  .players{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow:0 6px 18px #0005}
+  .player{position:relative; overflow:hidden}
+  .player.leader{outline:2px solid var(--accent); box-shadow:0 0 0 3px #5dd39e40 inset}
+  .player header{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+  .avatar{
+    width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-weight:900;
+    background:conic-gradient(from 0deg,#58c7a3,#5c8ef7,#a78bfa,#58c7a3);
+    border:2px solid #0c1240; color:white; text-shadow:0 1px 0 #0008;
+  }
+  .nameBlock{display:flex; flex-direction:column}
+  .nameBlock input{
+    font-size:18px; font-weight:800; letter-spacing:.2px; background:#0b153a; border-color:#22306b; padding:6px 8px; border-radius:10px;
+  }
+  .total{
+    margin-left:auto; background:#0b153a; border:1px solid var(--line); border-radius:12px;
+    padding:6px 10px; font-variant-numeric:tabular-nums; font-weight:900; font-size:22px;
+  }
+  .controls{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
+  .controls .delta{width:110px}
+  .controls .note{min-width:160px}
+  .quick button{padding:6px 8px}
+  .rm{margin-left:auto}
+
+  /* Right: BIG live leaderboard */
+  .lb{position:sticky; top:14px}
+  .lb .title{display:flex; align-items:center; justify-content:space-between; margin:0 0 10px}
+  .lb h3{font-size:22px; margin:0}
+  .lb table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums}
+  .lb th, .lb td{padding:14px 12px; border-bottom:1px solid #22306b; text-align:left}
+  .lb th{color:var(--muted); font-weight:800; letter-spacing:.3px; font-size:14px}
+  .lb .pos{width:52px; text-align:center; font-weight:900; font-size:18px}
+  .lb .name{font-weight:900; font-size:20px; letter-spacing:.2px}
+  .lb .score{font-weight:900; font-size:26px; text-align:right}
+  .row{transition:transform .12s ease, background-color .3s ease}
+  .rise{background:#14381f} .fall{background:#3a1420}
+  .medal{font-size:22px}
+  .badge{padding:4px 8px; border-radius:999px; background:#0b153a; border:1px solid var(--line); font-size:12px; color:var(--muted)}
+  .blink{animation:blink .8s ease 2}
+  @keyframes blink {50%{filter:brightness(1.4)}}
+
+  /* Winner modal */
+  .winner{position:fixed; inset:0; display:none; place-items:center; background:#0a1030cc; backdrop-filter:blur(2px)}
+  .winner.show{display:grid}
+  .winner .modal{background:#0f1b48; border:1px solid var(--line); border-radius:14px; padding:16px 16px 12px; max-width:min(92vw,420px)}
+  .winner h2{margin:0 0 6px}
+
+  .small{font-size:13px; color:var(--muted)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="card">
+    <div class="cluster">
+      <strong style="font-size:18px">Rummy 500</strong>
+      <span class="pill">Target:
+        <input id="targetInput" type="number" min="100" step="10" value="500" title="Winning total" />
+      </span>
+      <span class="pill">Players: <span id="playerCount">0</span></span>
+      <span class="pill">Hands: <span id="handCount">0</span></span>
+    </div>
+    <div class="cluster">
+      <button id="addPlayerBtn">+ Add player</button>
+      <button id="undoBtn">Undo</button>
+      <button id="newBtn">New game</button>
+      <button id="exportBtn" title="Copy JSON to clipboard">Export</button>
+      <button id="importBtn" title="Paste JSON to load">Import</button>
+    </div>
+  </header>
+
+  <main class="grid">
+    <section class="players" id="players"></section>
+
+    <aside class="card lb" id="leaderboardCard">
+      <div class="title">
+        <h3>Live Leaderboard</h3>
+        <span class="badge">auto-updates</span>
+      </div>
+      <table id="leaderboard" aria-label="Leaderboard">
+        <thead>
+          <tr><th class="pos">#</th><th>Player</th><th class="score">Score</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <p class="small" style="margin-top:10px">Top three show medals. Ties share positions.</p>
+    </aside>
+  </main>
+</div>
+
+<div class="winner" id="winner">
+  <div class="modal card">
+    <h2 id="winnerTitle"></h2>
+    <p class="small">First to reach or exceed the target wins.</p>
+    <div class="cluster" style="justify-content:flex-end">
+      <button id="continueBtn">Continue playing</button>
+      <button id="resetBtn">Reset totals</button>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const must = id => { const el = document.getElementById(id); if(!el) console.error('Missing element:', id); return el; };
+  const $players = must('players');
+  const $playerCount = must('playerCount');
+  const $handCount = must('handCount');
+  const $target = must('targetInput');
+  const $winner = must('winner');
+  const $winnerTitle = must('winnerTitle');
+  const $lbBody = document.querySelector('#leaderboard tbody');
+  if(!$players || !$lbBody) return;
+
+  const LS_KEY = 'rummy500_state_v3_biglb';
+  let state = { target:500, players:[], history:[], hands:0, locked:false };
+  let prevRanks = new Map();
+
+  const uid = () => Math.random().toString(36).slice(2,9);
+  const clampInt = (v,min,max) => Math.max(min, Math.min(max, isFinite(v)?v:min));
+  const ask = (m,d='') => prompt(m,d??'');
+  const initials = n => n.trim().split(/\s+/).slice(0,2).map(s=>s[0]?.toUpperCase()||'').join('') || 'P';
+  const stableSort = (a,cmp)=>a.map((v,i)=>[v,i]).sort((x,y)=>cmp(x[0],y[0])||x[1]-y[1]).map(p=>p[0]);
+  const escapeHtml = s => String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const save=()=>localStorage.setItem(LS_KEY, JSON.stringify(state));
+  const load=()=>{ try{ const r=localStorage.getItem(LS_KEY); if(r){ const o=JSON.parse(r); if(o&&o.players) state={...state,...o}; } }catch{} };
+
+  function addPlayer(name){
+    state.players.push({id:uid(), name:name||`Player ${state.players.length+1}`, total:0});
+    save(); render();
+  }
+  function addPlayerPrompt(){ const n=ask('Player name:',''); if(n!==null && n.trim()) addPlayer(n.trim()); }
+  function removePlayer(id){
+    if(!confirm('Remove this player?')) return;
+    state.players = state.players.filter(p=>p.id!==id);
+    state.history = state.history.filter(h=>h.pid!==id);
+    save(); render();
+  }
+  function renamePlayer(id, name){
+    const p = state.players.find(p=>p.id===id); if(!p) return;
+    p.name = name.trim()||p.name;
+    state.history.forEach(h=>{ if(h.pid===id) h.name=p.name; });
+    save(); render();
+  }
+  function addScore(pid, delta, note){
+    if(state.locked){ alert('Game finished. Continue or reset to keep scoring.'); return; }
+    delta = Number(delta); if(!isFinite(delta)) return;
+    const p = state.players.find(x=>x.id===pid); if(!p) return;
+
+    const before = currentRanks();
+    p.total += delta;
+    state.history.unshift({id:uid(), ts:Date.now(), pid, name:p.name, delta, totalAfter:p.total, note:(note||'').trim()});
+    recomputeHands(); save(); render();
+
+    const after = currentRanks();
+    const rB = before.get(pid), rA = after.get(pid);
+    if(rB && rA && rB!==rA) flashRow(pid, rA<rB?'rise':'fall');
+    prevRanks = after; checkWinner();
+  }
+  function undo(){
+    const last = state.history.shift(); if(!last) return;
+    const p = state.players.find(x=>x.id===last.pid); if(p) p.total -= last.delta;
+    recomputeHands(); save(); render(); prevRanks = currentRanks();
+  }
+  function recomputeHands(){
+    let count=0, seen=new Set();
+    for(const h of [...state.history].reverse()){
+      seen.add(h.pid);
+      if(seen.size>=state.players.length && state.players.length>0){ count++; seen.clear(); }
+    }
+    state.hands = count;
+  }
+  function newGame(){
+    if(!confirm('Start a new game? This clears totals and history.')) return;
+    state.history=[]; state.players.forEach(p=>p.total=0); state.hands=0; state.locked=false;
+    save(); render(); prevRanks = currentRanks();
+  }
+  function resetTotals(){
+    state.history=[]; state.players.forEach(p=>p.total=0); state.hands=0; state.locked=false;
+    save(); render(); prevRanks = currentRanks();
+  }
+  function checkWinner(){
+    const tgt = state.target||500;
+    const winners = state.players.filter(p=>p.total>=tgt);
+    if(winners.length){
+      const top = winners.sort((a,b)=>b.total-a.total)[0];
+      $winnerTitle.textContent = `${top.name} wins with ${top.total} points`;
+      state.locked = true; $winner.classList.add('show'); save();
+    }
+  }
+
+  function render(){
+    $playerCount.textContent = state.players.length;
+    $handCount.textContent = state.hands;
+    $target.value = state.target;
+
+    $players.innerHTML = '';
+    const max = Math.max(0, ...state.players.map(p=>p.total));
+    state.players.forEach(p=>{
+      const card = document.createElement('div');
+      card.className = 'card player' + (p.total===max && max>0 ? ' leader' : '');
+      card.innerHTML = `
+        <header>
+          <div class="avatar" aria-hidden="true">${initials(p.name)}</div>
+          <div class="nameBlock">
+            <input type="text" value="${escapeHtml(p.name)}" aria-label="Player name" />
+            <span class="small" style="margin-top:2px; color:var(--muted)">Edit name if needed</span>
+          </div>
+          <div class="total" title="Total">${p.total}</div>
+        </header>
+        <div class="controls">
+          <input class="delta" type="number" step="1" placeholder="+/- points" />
+          <input class="note" type="text" placeholder="note (optional)" />
+          <button class="addBtn">Add</button>
+          <span class="quick">
+            <button data-q="50">+50</button>
+            <button data-q="25">+25</button>
+            <button data-q="10">+10</button>
+            <button data-q="5">+5</button>
+            <button data-q="-5">−5</button>
+            <button data-q="-10">−10</button>
+          </span>
+          <button class="rm danger" title="Remove player">Remove</button>
+        </div>
+      `;
+      const nameInput = card.querySelector('input[type="text"]');
+      nameInput.onchange = () => renamePlayer(p.id, nameInput.value);
+      card.querySelector('.addBtn').onclick = () => {
+        const d = card.querySelector('.delta'), n = card.querySelector('.note');
+        if(d.value==='') return; addScore(p.id, Number(d.value), n.value); d.value=''; n.value='';
+      };
+      card.querySelectorAll('[data-q]').forEach(btn=>{ btn.onclick = () => addScore(p.id, Number(btn.dataset.q), ''); });
+      card.querySelector('.rm').onclick = () => removePlayer(p.id);
+      $players.appendChild(card);
+    });
+
+    renderLeaderboard();
+  }
+
+  function standings(){
+    const arr = stableSort([...state.players], (a,b)=> b.total - a.total);
+    let rank=0, last=null, seen=0;
+    return arr.map(p=>{ seen++; if(last===null||p.total!==last){ rank=seen; last=p.total; } return {rank,...p}; });
+  }
+  function currentRanks(){ const m=new Map(); for(const s of standings()) m.set(s.id,s.rank); return m; }
+
+  function renderLeaderboard(){
+    const rows = standings();
+    $lbBody.innerHTML='';
+    rows.forEach(s=>{
+      const tr = document.createElement('tr'); tr.className='row';
+      const before = prevRanks.get(s.id);
+      if(before){ if(s.rank<before) tr.classList.add('rise'); else if(s.rank>before) tr.classList.add('fall'); }
+      tr.innerHTML = `
+        <td class="pos">${s.rank<=3?['','🥇','🥈','🥉'][s.rank]:s.rank}</td>
+        <td class="name">${escapeHtml(s.name)}</td>
+        <td class="score">${s.total}</td>`;
+      $lbBody.appendChild(tr);
+      if(before && before!==s.rank){ tr.classList.add('blink'); setTimeout(()=>tr.classList.remove('blink'),800); }
+    });
+    prevRanks = currentRanks();
+  }
+
+  function flashRow(pid, cls){
+    const idx = standings().findIndex(x=>x.id===pid);
+    const tr = $lbBody.children[idx]; if(!tr) return;
+    tr.classList.remove('rise','fall'); tr.offsetWidth; tr.classList.add(cls);
+    setTimeout(()=>tr.classList.remove(cls),800);
+  }
+
+  const $add = must('addPlayerBtn');
+  const $undo = must('undoBtn');
+  const $new = must('newBtn');
+  const $exp = must('exportBtn');
+  const $imp = must('importBtn');
+  const $cont = must('continueBtn');
+  const $reset = must('resetBtn');
+
+  $add && ($add.onclick = addPlayerPrompt);
+  $undo && ($undo.onclick = undo);
+  $new && ($new.onclick = newGame);
+  $exp && ($exp.onclick = ()=>{ navigator.clipboard?.writeText(JSON.stringify(state,null,2)); alert('State copied to clipboard.'); });
+  $imp && ($imp.onclick = ()=>{
+    const raw = prompt('Paste previously exported JSON:',''); if(!raw) return;
+    try{ const o=JSON.parse(raw); if(!o.players) throw 0; state={...state,...o}; save(); render(); prevRanks=currentRanks(); }
+    catch{ alert('Invalid JSON.'); }
+  });
+  $cont && ($cont.onclick = ()=>{ state.locked=false; $winner.classList.remove('show'); save(); render(); });
+  $reset && ($reset.onclick = ()=>{ resetTotals(); $winner.classList.remove('show'); });
+
+  $target && ($target.onchange = ()=>{ state.target = clampInt(parseInt($target.value||'500'),100,5000); $target.value=state.target; save(); checkWinner(); render(); });
+
+  load();
+  if(state.players.length===0){ addPlayer('Player 1'); addPlayer('Player 2'); } else { render(); }
+  prevRanks = currentRanks();
+  checkWinner();
+
+  document.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      const a=document.activeElement;
+      if(a && a.classList.contains('delta')) a.closest('.player')?.querySelector('.addBtn')?.click();
+    }
+  });
+});
+</script>
+</body>
+</html>
+```
