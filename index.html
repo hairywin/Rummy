@@ -13,7 +13,7 @@
   html,body{height:100%; max-width:100%; overflow-x:hidden}
   body{
     margin:0;
-    padding: 14px max(14px, env(safe-area-inset-right)) 14px max(14px, env(safe-area-inset-left));
+    padding:14px max(14px, env(safe-area-inset-right)) 14px max(14px, env(safe-area-inset-left));
     background:
       radial-gradient(120% 120% at 20% -10%, #1d265a 0%, transparent 60%),
       radial-gradient(120% 120% at 80% -10%, #1b2a66 0%, transparent 60%),
@@ -26,11 +26,10 @@
   header.card{
     display:flex; gap:10px; align-items:center; justify-content:space-between; padding:12px 14px;
     background:linear-gradient(180deg,#121a3e,#0f1736); border:1px solid var(--line); border-radius:16px; box-shadow:0 8px 24px #0006;
-    max-width:100%;
   }
   .title{font-size:22px; display:flex; align-items:center; gap:8px}
   .cluster{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
-  .pill{padding:6px 10px; border-radius:999px; background:#0d1740; border:1px solid var(--line)}
+  .pill{padding:6px 10px; border-radius:999px; background:#0d1740; border:1px solid var(--line); color:var(--ink); font-weight:800}
   input, button{
     background:#0d1740; color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:8px 10px; font-weight:700;
   }
@@ -40,11 +39,11 @@
   button:hover{filter:brightness(1.07)}
   button:active{transform:translateY(1px)}
 
-  .grid{display:grid; gap:12px; grid-template-columns:.65fr 1.35fr; align-items:start; max-width:100%}
-  @media (max-width:980px){ .grid{grid-template-columns:1fr} .lb{order:-1} }
+  .grid{display:grid; gap:12px; grid-template-columns:.65fr 1.35fr; align-items:start}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} }
 
-  .players{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); max-width:100%}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px; box-shadow:0 6px 18px #0005; max-width:100%}
+  .players{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px; box-shadow:0 6px 18px #0005}
   .player{position:relative; overflow:hidden}
   .player::before{content:"♠️"; position:absolute; right:8px; top:6px; opacity:.12; font-size:22px; pointer-events:none}
   .player.leader{outline:2px solid var(--accent); box-shadow:0 0 0 3px #5dd39e40 inset}
@@ -64,27 +63,21 @@
   }
   .total{
     margin-left:auto; background:#0b153a; border:1px solid var(--line); border-radius:12px;
-    padding:6px 12px; font-variant-numeric:tabular-nums; font-weight:900; font-size:24px; flex:0 0 auto;
+    padding:6px 12px; font-variant-numeric:tabular-nums; font-weight:900; font-size:24px;
   }
   .bump{animation:bump .35s ease}
   @keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}
 
-  .controls{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
-  .controls .delta{width:110px; max-width:40%}
-  .controls .note{min-width:140px; flex:1 1 160px}
-  .quick button{padding:6px 8px}
-  .rm{margin-left:auto}
-
-  /* BIG leaderboard with internal scroll when tall */
+  /* Leaderboard */
   .lb{
-    position:sticky; top:14px; max-width:100%;
-    max-height: calc(100dvh - 28px);   /* fit screen height */
-    overflow:auto;                      /* scroll inside */
+    position:sticky; top:14px;
+    max-height: calc(100dvh - 28px);  /* desktop/tablet fit */
+    overflow:auto;
     -webkit-overflow-scrolling: touch;
     overscroll-behavior: contain;
   }
   .lb .title{display:flex; align-items:center; justify-content:space-between; margin:0 0 10px}
-  .lb h3{font-size:22px; margin:0; display:flex; gap:8px; align-items:center}
+  .lb h3{font-size:22px; margin:0}
   .lb table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; table-layout:fixed}
   .lb th, .lb td{padding:14px 12px; border-bottom:1px solid #22306b; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
   .lb th{color:var(--muted); font-weight:900; letter-spacing:.3px; font-size:14px}
@@ -94,6 +87,14 @@
   .row{transition:background-color .3s ease}
   .rise{background:#14381f} .fall{background:#3a1420}
   .blink{animation:blink .8s ease 2} @keyframes blink{50%{filter:brightness(1.4)}}
+
+  /* Mobile behavior: leaderboard is part of flow, collapsed to top 3 by default */
+  #toggleLB{display:none}                /* hidden on desktop */
+  @media (max-width:980px){
+    .lb{position:static; max-height:none; overflow:visible}
+    #toggleLB{display:inline-block}
+    .lb.collapsed tbody tr:nth-child(n+4){display:none}
+  }
 
   .winner{position:fixed; inset:0; display:none; place-items:center; background:#0a1030cc; backdrop-filter:blur(2px)}
   .winner.show{display:grid}
@@ -129,12 +130,13 @@
     <aside class="card lb" id="leaderboardCard">
       <div class="title">
         <h3>Live Leaderboard ♠️♥️♦️♣️</h3>
-        <span class="pill" style="font-weight:800; font-size:12px">auto-updates</span>
+        <div class="cluster">
+          <span class="pill" style="font-weight:800; font-size:12px">auto-updates</span>
+          <button id="toggleLB" class="pill" title="Show or collapse on mobile">Show all</button>
+        </div>
       </div>
       <table id="leaderboard" aria-label="Leaderboard">
-        <thead>
-          <tr><th class="pos">#</th><th>Player</th><th class="score">Score</th></tr>
-        </thead>
+        <thead><tr><th class="pos">#</th><th>Player</th><th class="score">Score</th></tr></thead>
         <tbody></tbody>
       </table>
       <p class="small" style="margin-top:10px">Top three show medals. Ties share positions.</p>
@@ -165,11 +167,13 @@ document.addEventListener('DOMContentLoaded', () => {
   const $winner = must('winner');
   const $winnerTitle = must('winnerTitle');
   const $lbBody = document.querySelector('#leaderboard tbody');
+  const $lbCard = must('leaderboardCard');
+  const $toggleLB = must('toggleLB');
   const $fx = must('fx');
   if(!$players || !$lbBody) return;
 
   const SUITS = ['♠️','♥️','♦️','♣️','🃏'];
-  const LS_KEY = 'rummy500_state_v4_emoji';
+  const LS_KEY = 'rummy500_state_v5_mobilelb';
   let state = { target:500, players:[], history:[], hands:0, locked:false };
   let prevRanks = new Map();
 
@@ -185,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
   function ensureSuits(){ for(const p of state.players){ if(!p.suit){ p.suit = SUITS[(Math.random()*SUITS.length)|0]; } } }
 
   function addPlayer(name){
-    state.players.push({id:uid(), name:name||`Player ${state.players.length+1}`, total:0, suit: SUITS[(state.players.length)%SUITS.length]});
+    state.players.push({id:uid(), name:name||`Player ${state.players.length+1}`, total:0, suit: SUITS[state.players.length%SUITS.length]});
     save(); render();
   }
   function addPlayerPrompt(){ const n=ask('Player name:',''); if(n!==null && n.trim()) addPlayer(n.trim()); }
@@ -359,6 +363,21 @@ document.addEventListener('DOMContentLoaded', () => {
     requestAnimationFrame(step); window.addEventListener('resize', resize, {once:true});
   }
 
+  /* Mobile leaderboard toggle */
+  function isMobile(){ return window.matchMedia('(max-width: 980px)').matches; }
+  function applyLBMode(){
+    if(isMobile()){
+      if(!$lbCard.classList.contains('collapsed')) $lbCard.classList.add('collapsed');
+      $toggleLB.textContent = $lbCard.classList.contains('collapsed') ? 'Show all' : 'Show top 3';
+      $toggleLB.style.display = 'inline-block';
+    }else{
+      $lbCard.classList.remove('collapsed');
+      $toggleLB.style.display = 'none';
+    }
+  }
+  $toggleLB.onclick = () => { $lbCard.classList.toggle('collapsed'); $toggleLB.textContent = $lbCard.classList.contains('collapsed') ? 'Show all' : 'Show top 3'; };
+  window.addEventListener('resize', applyLBMode);
+
   // Wire buttons
   const w = id => must(id);
   w('addPlayerBtn').onclick = addPlayerPrompt;
@@ -379,6 +398,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if(state.players.length===0){ addPlayer('Player 1'); addPlayer('Player 2'); } else { render(); }
   prevRanks = currentRanks();
   checkWinner();
+  applyLBMode();
 
   // Enter key adds score for focused player
   document.addEventListener('keydown', e=>{
