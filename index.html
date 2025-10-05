@@ -3,42 +3,36 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Rummy 500 — Fun Scorekeeper</title>
+<title>Rummy 500 🃏 — Scorekeeper</title>
 <style>
   :root{
-    --bg:#0a0f2a; --ink:#eef3ff; --muted:#a8b7de; --panel:#12183b; --panel2:#0d1331;
+    --bg:#09102a; --ink:#eef3ff; --muted:#a8b7de; --panel:#12183b; --panel2:#0d1331;
     --line:#273579; --accent:#5dd39e; --warn:#ffd166; --danger:#ff6b6b;
   }
   *,*::before,*::after{box-sizing:border-box}
-  html,body{height:100%; max-width:100%; overflow-x:hidden} /* kill sideways scroll */
+  html,body{height:100%; max-width:100%; overflow-x:hidden}
   body{
     margin:0;
-    /* safe-area aware horizontal padding */
     padding: 14px max(14px, env(safe-area-inset-right)) 14px max(14px, env(safe-area-inset-left));
     background:
       radial-gradient(120% 120% at 20% -10%, #1d265a 0%, transparent 60%),
       radial-gradient(120% 120% at 80% -10%, #1b2a66 0%, transparent 60%),
       linear-gradient(180deg,var(--panel2),#070b1e 70%);
     color:var(--ink);
-    font:500 15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
-    /* center content; avoid grid on <body> which caused left bias */
-    display:block;
+    font:600 15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;
   }
-  .wrap{
-    width:min(1300px,100%);           /* never exceed viewport width */
-    margin-inline:auto;               /* center horizontally */
-    display:grid; gap:12px;
-  }
+  .wrap{width:min(1300px,100%); margin-inline:auto; display:grid; gap:12px}
 
   header.card{
     display:flex; gap:10px; align-items:center; justify-content:space-between; padding:12px 14px;
-    background:linear-gradient(180deg,#121a3e,#0f1736); border:1px solid var(--line); border-radius:14px; box-shadow:0 8px 24px #0006;
+    background:linear-gradient(180deg,#121a3e,#0f1736); border:1px solid var(--line); border-radius:16px; box-shadow:0 8px 24px #0006;
     max-width:100%;
   }
+  .title{font-size:22px; display:flex; align-items:center; gap:8px}
   .cluster{display:flex; gap:8px; align-items:center; flex-wrap:wrap}
   .pill{padding:6px 10px; border-radius:999px; background:#0d1740; border:1px solid var(--line)}
   input, button{
-    background:#0d1740; color:var(--ink); border:1px solid var(--line); border-radius:10px; padding:8px 10px; font-weight:600;
+    background:#0d1740; color:var(--ink); border:1px solid var(--line); border-radius:12px; padding:8px 10px; font-weight:700;
   }
   input[type="number"]{width:90px; max-width:100%}
   input[type="text"]{min-width:140px; max-width:100%}
@@ -46,65 +40,60 @@
   button:hover{filter:brightness(1.07)}
   button:active{transform:translateY(1px)}
 
-  /* Layout: left controls narrower, right leaderboard wider */
-  .grid{
-    display:grid; gap:12px;
-    grid-template-columns: 0.65fr 1.35fr;
-    align-items:start;
-    max-width:100%;
-  }
-  @media (max-width: 980px){
-    .grid{grid-template-columns:1fr}
-    .lb{order:-1} /* leaderboard first on mobile */
-  }
+  .grid{display:grid; gap:12px; grid-template-columns:.65fr 1.35fr; align-items:start; max-width:100%}
+  @media (max-width:980px){ .grid{grid-template-columns:1fr} .lb{order:-1} }
 
-  /* Player cards */
   .players{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); max-width:100%}
-  .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:12px; box-shadow:0 6px 18px #0005; max-width:100%}
+  .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px; box-shadow:0 6px 18px #0005; max-width:100%}
   .player{position:relative; overflow:hidden}
+  .player::before{ /* subtle corner suit */
+    content:"♠️"; position:absolute; right:8px; top:6px; opacity:.12; font-size:22px; pointer-events:none;
+  }
   .player.leader{outline:2px solid var(--accent); box-shadow:0 0 0 3px #5dd39e40 inset}
-  .player header{display:flex; align-items:center; gap:10px; margin-bottom:8px}
+  .player header{display:flex; align-items:center; gap:12px; margin-bottom:8px}
   .avatar{
-    width:44px; height:44px; border-radius:50%; display:grid; place-items:center; font-weight:900;
-    background:conic-gradient(from 0deg,#58c7a3,#5c8ef7,#a78bfa,#58c7a3);
-    border:2px solid #0c1240; color:white; text-shadow:0 1px 0 #0008;
-    flex:0 0 44px;
+    position:relative; width:52px; height:52px; border-radius:50%; display:grid; place-items:center; font-size:26px;
+    background:radial-gradient(100% 100% at 30% 20%, #62d7a9 0%, #5a8cf5 40%, #a98cfa 100%);
+    border:2px solid #0c1240; color:#fff; text-shadow:0 1px 0 #0008; flex:0 0 52px;
+  }
+  .avatar .chip{
+    position:absolute; right:-6px; bottom:-6px; font:800 11px/1 ui-monospace,SFMono-Regular,Consolas,monospace;
+    background:#0b153a; border:1px solid #22306b; color:#fff; padding:4px 6px; border-radius:999px;
   }
   .nameBlock{display:flex; flex-direction:column; min-width:0}
   .nameBlock input{
-    font-size:18px; font-weight:800; letter-spacing:.2px; background:#0b153a; border-color:#22306b; padding:6px 8px; border-radius:10px; width:100%;
+    font-size:18px; font-weight:900; letter-spacing:.2px; background:#0b153a; border-color:#22306b; padding:6px 10px; border-radius:12px; width:100%;
   }
   .total{
     margin-left:auto; background:#0b153a; border:1px solid var(--line); border-radius:12px;
-    padding:6px 10px; font-variant-numeric:tabular-nums; font-weight:900; font-size:22px; flex:0 0 auto;
+    padding:6px 12px; font-variant-numeric:tabular-nums; font-weight:900; font-size:24px; flex:0 0 auto;
   }
+  .bump{animation:bump .35s ease}
+  @keyframes bump{0%{transform:scale(1)}35%{transform:scale(1.12)}100%{transform:scale(1)}}
+
   .controls{display:flex; gap:6px; flex-wrap:wrap; align-items:center}
   .controls .delta{width:110px; max-width:40%}
   .controls .note{min-width:140px; flex:1 1 160px}
   .quick button{padding:6px 8px}
   .rm{margin-left:auto}
 
-  /* Right: big live leaderboard */
   .lb{position:sticky; top:14px; max-width:100%}
   .lb .title{display:flex; align-items:center; justify-content:space-between; margin:0 0 10px}
-  .lb h3{font-size:22px; margin:0}
+  .lb h3{font-size:22px; margin:0; display:flex; gap:8px; align-items:center}
   .lb table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; table-layout:fixed}
   .lb th, .lb td{padding:14px 12px; border-bottom:1px solid #22306b; text-align:left; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
-  .lb th{color:var(--muted); font-weight:800; letter-spacing:.3px; font-size:14px}
-  .lb .pos{width:52px; text-align:center; font-weight:900; font-size:18px}
+  .lb th{color:var(--muted); font-weight:900; letter-spacing:.3px; font-size:14px}
+  .lb .pos{width:56px; text-align:center; font-weight:900; font-size:18px}
   .lb .name{font-weight:900; font-size:20px; letter-spacing:.2px}
-  .lb .score{font-weight:900; font-size:26px; text-align:right}
-  .row{transition:transform .12s ease, background-color .3s ease}
+  .lb .score{font-weight:900; font-size:28px; text-align:right}
+  .suit{margin-right:8px}
+  .row{transition:background-color .3s ease}
   .rise{background:#14381f} .fall{background:#3a1420}
-  .medal{font-size:22px}
-  .badge{padding:4px 8px; border-radius:999px; background:#0b153a; border:1px solid var(--line); font-size:12px; color:var(--muted)}
-  .blink{animation:blink .8s ease 2}
-  @keyframes blink {50%{filter:brightness(1.4)}}
+  .blink{animation:blink .8s ease 2} @keyframes blink{50%{filter:brightness(1.4)}}
 
-  /* Winner modal */
   .winner{position:fixed; inset:0; display:none; place-items:center; background:#0a1030cc; backdrop-filter:blur(2px)}
   .winner.show{display:grid}
-  .winner .modal{background:#0f1b48; border:1px solid var(--line); border-radius:14px; padding:16px 16px 12px; max-width:min(92vw,420px)}
+  .winner .modal{background:#0f1b48; border:1px solid var(--line); border-radius:16px; padding:16px 16px 12px; max-width:min(92vw,420px)}
   .winner h2{margin:0 0 6px}
 
   .small{font-size:13px; color:var(--muted)}
@@ -114,19 +103,19 @@
 <div class="wrap">
   <header class="card">
     <div class="cluster">
-      <strong style="font-size:18px">Rummy 500</strong>
-      <span class="pill">Target:
+      <div class="title">Rummy 500 🃏</div>
+      <span class="pill">🎯 Target:
         <input id="targetInput" type="number" min="100" step="10" value="500" title="Winning total" />
       </span>
-      <span class="pill">Players: <span id="playerCount">0</span></span>
-      <span class="pill">Hands: <span id="handCount">0</span></span>
+      <span class="pill">👥 Players: <span id="playerCount">0</span></span>
+      <span class="pill">🖐️ Hands: <span id="handCount">0</span></span>
     </div>
     <div class="cluster">
-      <button id="addPlayerBtn">+ Add player</button>
-      <button id="undoBtn">Undo</button>
-      <button id="newBtn">New game</button>
-      <button id="exportBtn" title="Copy JSON to clipboard">Export</button>
-      <button id="importBtn" title="Paste JSON to load">Import</button>
+      <button id="addPlayerBtn">➕ Add player</button>
+      <button id="undoBtn">⤺ Undo</button>
+      <button id="newBtn">🆕 New game</button>
+      <button id="exportBtn" title="Copy JSON to clipboard">📤 Export</button>
+      <button id="importBtn" title="Paste JSON to load">📥 Import</button>
     </div>
   </header>
 
@@ -135,8 +124,8 @@
 
     <aside class="card lb" id="leaderboardCard">
       <div class="title">
-        <h3>Live Leaderboard</h3>
-        <span class="badge">auto-updates</span>
+        <h3>Live Leaderboard ♠️♥️♦️♣️</h3>
+        <span class="pill" style="font-weight:800; font-size:12px">auto-updates</span>
       </div>
       <table id="leaderboard" aria-label="Leaderboard">
         <thead>
@@ -160,6 +149,9 @@
   </div>
 </div>
 
+<!-- tiny canvas for confetti -->
+<canvas id="fx" style="position:fixed; inset:0; pointer-events:none;"></canvas>
+
 <script>
 document.addEventListener('DOMContentLoaded', () => {
   const must = id => { const el = document.getElementById(id); if(!el) console.error('Missing element:', id); return el; };
@@ -170,9 +162,11 @@ document.addEventListener('DOMContentLoaded', () => {
   const $winner = must('winner');
   const $winnerTitle = must('winnerTitle');
   const $lbBody = document.querySelector('#leaderboard tbody');
+  const $fx = must('fx');
   if(!$players || !$lbBody) return;
 
-  const LS_KEY = 'rummy500_state_v3_biglb';
+  const SUITS = ['♠️','♥️','♦️','♣️','🃏'];
+  const LS_KEY = 'rummy500_state_v4_emoji';
   let state = { target:500, players:[], history:[], hands:0, locked:false };
   let prevRanks = new Map();
 
@@ -185,8 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const save=()=>localStorage.setItem(LS_KEY, JSON.stringify(state));
   const load=()=>{ try{ const r=localStorage.getItem(LS_KEY); if(r){ const o=JSON.parse(r); if(o&&o.players) state={...state,...o}; } }catch{} };
 
+  function ensureSuits(){
+    for(const p of state.players){ if(!p.suit){ p.suit = SUITS[(Math.random()*SUITS.length)|0]; } }
+  }
+
   function addPlayer(name){
-    state.players.push({id:uid(), name:name||`Player ${state.players.length+1}`, total:0});
+    state.players.push({id:uid(), name:name||`Player ${state.players.length+1}`, total:0, suit: SUITS[(state.players.length)%SUITS.length]});
     save(); render();
   }
   function addPlayerPrompt(){ const n=ask('Player name:',''); if(n!==null && n.trim()) addPlayer(n.trim()); }
@@ -211,6 +209,10 @@ document.addEventListener('DOMContentLoaded', () => {
     p.total += delta;
     state.history.unshift({id:uid(), ts:Date.now(), pid, name:p.name, delta, totalAfter:p.total, note:(note||'').trim()});
     recomputeHands(); save(); render();
+
+    // bump animation on the player's total
+    const totalEl = document.querySelector(`[data-id="${pid}"] .total`);
+    if(totalEl){ totalEl.classList.remove('bump'); void totalEl.offsetWidth; totalEl.classList.add('bump'); }
 
     const after = currentRanks();
     const rB = before.get(pid), rA = after.get(pid);
@@ -244,8 +246,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const winners = state.players.filter(p=>p.total>=tgt);
     if(winners.length){
       const top = winners.sort((a,b)=>b.total-a.total)[0];
-      $winnerTitle.textContent = `${top.name} wins with ${top.total} points`;
+      $winnerTitle.textContent = `🏆 ${top.name} wins with ${top.total} points`;
       state.locked = true; $winner.classList.add('show'); save();
+      confetti(1100);
     }
   }
 
@@ -258,10 +261,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const max = Math.max(0, ...state.players.map(p=>p.total));
     state.players.forEach(p=>{
       const card = document.createElement('div');
+      card.dataset.id = p.id;
       card.className = 'card player' + (p.total===max && max>0 ? ' leader' : '');
       card.innerHTML = `
         <header>
-          <div class="avatar" aria-hidden="true">${initials(p.name)}</div>
+          <div class="avatar" aria-hidden="true">${p.suit}<span class="chip">${initials(p.name)}</span></div>
           <div class="nameBlock">
             <input type="text" value="${escapeHtml(p.name)}" aria-label="Player name" />
             <span class="small" style="margin-top:2px; color:var(--muted)">Edit name if needed</span>
@@ -311,9 +315,10 @@ document.addEventListener('DOMContentLoaded', () => {
       const tr = document.createElement('tr'); tr.className='row';
       const before = prevRanks.get(s.id);
       if(before){ if(s.rank<before) tr.classList.add('rise'); else if(s.rank>before) tr.classList.add('fall'); }
+      const suit = (state.players.find(p=>p.id===s.id)?.suit) || '';
       tr.innerHTML = `
         <td class="pos">${s.rank<=3?['','🥇','🥈','🥉'][s.rank]:s.rank}</td>
-        <td class="name">${escapeHtml(s.name)}</td>
+        <td class="name"><span class="suit">${suit}</span>${escapeHtml(s.name)}</td>
         <td class="score">${s.total}</td>`;
       $lbBody.appendChild(tr);
       if(before && before!==s.rank){ tr.classList.add('blink'); setTimeout(()=>tr.classList.remove('blink'),800); }
@@ -328,33 +333,54 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(()=>tr.classList.remove(cls),800);
   }
 
-  const $add = must('addPlayerBtn');
-  const $undo = must('undoBtn');
-  const $new = must('newBtn');
-  const $exp = must('exportBtn');
-  const $imp = must('importBtn');
-  const $cont = must('continueBtn');
-  const $reset = must('resetBtn');
+  // Confetti (tiny, no libraries)
+  function confetti(ms=1000){
+    const ctx = $fx.getContext('2d');
+    const dpr = Math.max(1, Math.floor(window.devicePixelRatio||1));
+    const resize = ()=>{ $fx.width = innerWidth*dpr; $fx.height = innerHeight*dpr; ctx.setTransform(dpr,0,0,dpr,0,0); };
+    resize(); let t0=null; const N=90;
+    const parts = Array.from({length:N},(_,i)=>({
+      x: innerWidth/2, y: innerHeight*0.25, vx: (Math.random()*2-1)*4, vy: Math.random()*-3-1,
+      g: 0.12, s: 6+Math.random()*6, r: Math.random()*Math.PI, vr:(Math.random()*2-1)*0.2,
+      c: ['#5dd39e','#ffd166','#ff6b6b','#8ab6ff','#c4a1ff'][i%5]
+    }));
+    function step(t){
+      if(!t0) t0=t; const dt=Math.min((t-t0)/16,2); t0=t;
+      ctx.clearRect(0,0,innerWidth,innerHeight);
+      for(const p of parts){
+        p.vy += p.g*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.r += p.vr*dt;
+        ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
+        ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);
+        ctx.restore();
+      }
+      if(t - (performance.now()-ms) < ms) requestAnimationFrame(step);
+      else ctx.clearRect(0,0,innerWidth,innerHeight);
+    }
+    requestAnimationFrame(step); window.addEventListener('resize', resize, {once:true});
+  }
 
-  $add && ($add.onclick = addPlayerPrompt);
-  $undo && ($undo.onclick = undo);
-  $new && ($new.onclick = newGame);
-  $exp && ($exp.onclick = ()=>{ navigator.clipboard?.writeText(JSON.stringify(state,null,2)); alert('State copied to clipboard.'); });
-  $imp && ($imp.onclick = ()=>{
+  // Wire buttons
+  const w = id => must(id);
+  w('addPlayerBtn').onclick = addPlayerPrompt;
+  w('undoBtn').onclick = undo;
+  w('newBtn').onclick = newGame;
+  w('exportBtn').onclick = ()=>{ navigator.clipboard?.writeText(JSON.stringify(state,null,2)); alert('State copied to clipboard.'); };
+  w('importBtn').onclick = ()=>{
     const raw = prompt('Paste previously exported JSON:',''); if(!raw) return;
-    try{ const o=JSON.parse(raw); if(!o.players) throw 0; state={...state,...o}; save(); render(); prevRanks=currentRanks(); }
+    try{ const o=JSON.parse(raw); if(!o.players) throw 0; state={...state,...o}; ensureSuits(); save(); render(); prevRanks=currentRanks(); }
     catch{ alert('Invalid JSON.'); }
-  });
-  $cont && ($cont.onclick = ()=>{ state.locked=false; $winner.classList.remove('show'); save(); render(); });
-  $reset && ($reset.onclick = ()=>{ resetTotals(); $winner.classList.remove('show'); });
+  };
+  w('continueBtn').onclick = ()=>{ state.locked=false; $winner.classList.remove('show'); save(); render(); };
+  w('resetBtn').onclick = ()=>{ resetTotals(); $winner.classList.remove('show'); };
+  $target.onchange = ()=>{ state.target = clampInt(parseInt($target.value||'500'),100,5000); $target.value=state.target; save(); checkWinner(); render(); };
 
-  $target && ($target.onchange = ()=>{ state.target = clampInt(parseInt($target.value||'500'),100,5000); $target.value=state.target; save(); checkWinner(); render(); });
-
-  load();
+  // Boot
+  load(); ensureSuits();
   if(state.players.length===0){ addPlayer('Player 1'); addPlayer('Player 2'); } else { render(); }
   prevRanks = currentRanks();
   checkWinner();
 
+  // Enter key adds score for focused player
   document.addEventListener('keydown', e=>{
     if(e.key==='Enter'){
       const a=document.activeElement;
