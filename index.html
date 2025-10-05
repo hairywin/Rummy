@@ -46,9 +46,7 @@
   .players{display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); max-width:100%}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:12px; box-shadow:0 6px 18px #0005; max-width:100%}
   .player{position:relative; overflow:hidden}
-  .player::before{ /* subtle corner suit */
-    content:"♠️"; position:absolute; right:8px; top:6px; opacity:.12; font-size:22px; pointer-events:none;
-  }
+  .player::before{content:"♠️"; position:absolute; right:8px; top:6px; opacity:.12; font-size:22px; pointer-events:none}
   .player.leader{outline:2px solid var(--accent); box-shadow:0 0 0 3px #5dd39e40 inset}
   .player header{display:flex; align-items:center; gap:12px; margin-bottom:8px}
   .avatar{
@@ -77,7 +75,14 @@
   .quick button{padding:6px 8px}
   .rm{margin-left:auto}
 
-  .lb{position:sticky; top:14px; max-width:100%}
+  /* BIG leaderboard with internal scroll when tall */
+  .lb{
+    position:sticky; top:14px; max-width:100%;
+    max-height: calc(100dvh - 28px);   /* fit screen height */
+    overflow:auto;                      /* scroll inside */
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
   .lb .title{display:flex; align-items:center; justify-content:space-between; margin:0 0 10px}
   .lb h3{font-size:22px; margin:0; display:flex; gap:8px; align-items:center}
   .lb table{width:100%; border-collapse:collapse; font-variant-numeric:tabular-nums; table-layout:fixed}
@@ -86,7 +91,6 @@
   .lb .pos{width:56px; text-align:center; font-weight:900; font-size:18px}
   .lb .name{font-weight:900; font-size:20px; letter-spacing:.2px}
   .lb .score{font-weight:900; font-size:28px; text-align:right}
-  .suit{margin-right:8px}
   .row{transition:background-color .3s ease}
   .rise{background:#14381f} .fall{background:#3a1420}
   .blink{animation:blink .8s ease 2} @keyframes blink{50%{filter:brightness(1.4)}}
@@ -149,7 +153,6 @@
   </div>
 </div>
 
-<!-- tiny canvas for confetti -->
 <canvas id="fx" style="position:fixed; inset:0; pointer-events:none;"></canvas>
 
 <script>
@@ -179,9 +182,7 @@ document.addEventListener('DOMContentLoaded', () => {
   const save=()=>localStorage.setItem(LS_KEY, JSON.stringify(state));
   const load=()=>{ try{ const r=localStorage.getItem(LS_KEY); if(r){ const o=JSON.parse(r); if(o&&o.players) state={...state,...o}; } }catch{} };
 
-  function ensureSuits(){
-    for(const p of state.players){ if(!p.suit){ p.suit = SUITS[(Math.random()*SUITS.length)|0]; } }
-  }
+  function ensureSuits(){ for(const p of state.players){ if(!p.suit){ p.suit = SUITS[(Math.random()*SUITS.length)|0]; } } }
 
   function addPlayer(name){
     state.players.push({id:uid(), name:name||`Player ${state.players.length+1}`, total:0, suit: SUITS[(state.players.length)%SUITS.length]});
@@ -210,7 +211,6 @@ document.addEventListener('DOMContentLoaded', () => {
     state.history.unshift({id:uid(), ts:Date.now(), pid, name:p.name, delta, totalAfter:p.total, note:(note||'').trim()});
     recomputeHands(); save(); render();
 
-    // bump animation on the player's total
     const totalEl = document.querySelector(`[data-id="${pid}"] .total`);
     if(totalEl){ totalEl.classList.remove('bump'); void totalEl.offsetWidth; totalEl.classList.add('bump'); }
 
@@ -333,7 +333,7 @@ document.addEventListener('DOMContentLoaded', () => {
     setTimeout(()=>tr.classList.remove(cls),800);
   }
 
-  // Confetti (tiny, no libraries)
+  /* Confetti */
   function confetti(ms=1000){
     const ctx = $fx.getContext('2d');
     const dpr = Math.max(1, Math.floor(window.devicePixelRatio||1));
@@ -348,7 +348,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if(!t0) t0=t; const dt=Math.min((t-t0)/16,2); t0=t;
       ctx.clearRect(0,0,innerWidth,innerHeight);
       for(const p of parts){
-        p.vy += p.g*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.r += p.vr*dt;
+        p.vy += 0.12*dt; p.x += p.vx*dt; p.y += p.vy*dt; p.r += p.vr*dt;
         ctx.save(); ctx.translate(p.x,p.y); ctx.rotate(p.r);
         ctx.fillStyle=p.c; ctx.fillRect(-p.s/2,-p.s/2,p.s,p.s);
         ctx.restore();
